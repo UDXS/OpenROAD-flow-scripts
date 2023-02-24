@@ -2,23 +2,13 @@ utl::set_metrics_stage "floorplan__{}"
 source $::env(SCRIPTS_DIR)/load.tcl
 load_design 1_synth.v 1_synth.sdc "Starting floorplan"
 
-#Run check_setup
-puts "\n=========================================================================="
-puts "Floorplan check_setup"
-puts "--------------------------------------------------------------------------"
-check_setup
-
 set num_instances [llength [get_cells -hier *]]
 puts "number instances in verilog is $num_instances"
 
-# Initialize floorplan by reading in floorplan DEF
-# ---------------------------------------------------------------------------
-if {[info exists ::env(FLOORPLAN_DEF)]} {
-    puts "Read in Floorplan DEF to initialize floorplan:  $env(FLOORPLAN_DEF)"
-    read_def -floorplan_initialize $env(FLOORPLAN_DEF)
 # Initialize floorplan using ICeWall FOOTPRINT
 # ----------------------------------------------------------------------------
-} elseif {[info exists ::env(FOOTPRINT)]} {
+
+if {[info exists ::env(FOOTPRINT)]} {
 
   ICeWall load_footprint $env(FOOTPRINT)
 
@@ -29,20 +19,13 @@ if {[info exists ::env(FLOORPLAN_DEF)]} {
 
   ICeWall init_footprint $env(SIG_MAP_FILE)
 
+
 # Initialize floorplan using CORE_UTILIZATION
 # ----------------------------------------------------------------------------
 } elseif {[info exists ::env(CORE_UTILIZATION)] && $::env(CORE_UTILIZATION) != "" } {
-  set aspect_ratio 1.0
-  if {[info exists ::env(CORE_ASPECT_RATIO)] && $::env(CORE_ASPECT_RATIO) != ""} {
-    set aspect_ratio $::env(CORE_ASPECT_RATIO)
-  }
-  set core_margin 1.0
-  if {[info exists ::env(CORE_MARGIN)] && $::env(CORE_MARGIN) != ""} {
-    set core_margin $::env(CORE_MARGIN)
-  }
   initialize_floorplan -utilization $::env(CORE_UTILIZATION) \
-                       -aspect_ratio $aspect_ratio \
-                       -core_space $core_margin \
+                       -aspect_ratio $::env(CORE_ASPECT_RATIO) \
+                       -core_space $::env(CORE_MARGIN) \
                        -site $::env(PLACE_SITE)
 
 # Initialize floorplan using DIE_AREA/CORE_AREA
@@ -55,10 +38,8 @@ if {[info exists ::env(FLOORPLAN_DEF)]} {
 
 if { [info exists ::env(MAKE_TRACKS)] } {
   source $::env(MAKE_TRACKS)
-} elseif {[file exists $::env(PLATFORM_DIR)/make_tracks.tcl]} {
-  source $::env(PLATFORM_DIR)/make_tracks.tcl
 } else {
-  make_tracks
+  source $::env(PLATFORM_DIR)/make_tracks.tcl
 }
 
 if {[info exists ::env(FOOTPRINT_TCL)]} {
@@ -68,6 +49,7 @@ if {[info exists ::env(FOOTPRINT_TCL)]} {
 
 # remove buffers inserted by yosys/abc
 remove_buffers
+
 
 ##### Restructure for timing #########
 if { [info exist ::env(RESYNTH_TIMING_RECOVER)] && $::env(RESYNTH_TIMING_RECOVER) == 1 } {
@@ -110,19 +92,17 @@ if { [info exist ::env(RESYNTH_TIMING_RECOVER)] && $::env(RESYNTH_TIMING_RECOVER
 
 puts "Default units for flow"
 report_units
-report_units_metric
 source $::env(SCRIPTS_DIR)/report_metrics.tcl
-report_metrics "floorplan final" false false
+report_metrics "floorplan final" false
 
 if { [info exist ::env(RESYNTH_AREA_RECOVER)] && $::env(RESYNTH_AREA_RECOVER) == 1 } {
 
-  utl::push_metrics_stage "floorplan__{}__pre_restruct"
   set num_instances [llength [get_cells -hier *]]
   puts "number instances before restructure is $num_instances"
+  utl::metric_integer "floorplan__design__instance__count__stdcell__pre_restruct" $num_instances
   puts "Design Area before restructure"
+  utl::push_metrics_stage "floorplan__{}__pre_restruct"
   report_design_area
-  report_design_area_metrics
-  utl::pop_metrics_stage
 
   if {![info exists save_checkpoint] || $save_checkpoint} {
     write_verilog $::env(RESULTS_DIR)/2_pre_abc.v
@@ -147,13 +127,15 @@ if { [info exist ::env(RESYNTH_AREA_RECOVER)] && $::env(RESYNTH_AREA_RECOVER) ==
   if {![info exists save_checkpoint] || $save_checkpoint} {
     write_verilog $::env(RESULTS_DIR)/2_post_abc.v
   }
-  utl::push_metrics_stage "floorplan__{}__post_restruct"
   set num_instances [llength [get_cells -hier *]]
   puts "number instances after restructure is $num_instances"
+  utl::metric_integer "floorplan__design__instance__count__stdcell__post_restruct" $num_instances
   puts "Design Area after restructure"
+  utl::set_metrics_stage "floorplan__{}__post_restruct"
   report_design_area
-  report_design_area_metrics
+  
   utl::pop_metrics_stage
+  report_design_area
 }
 
 if { [info exists ::env(POST_FLOORPLAN_TCL)] } {
@@ -161,9 +143,6 @@ if { [info exists ::env(POST_FLOORPLAN_TCL)] } {
 }
 
 if {![info exists save_checkpoint] || $save_checkpoint} {
-  if {[info exists ::env(GALLERY_REPORT)]  && $::env(GALLERY_REPORT) != 0} {
-      write_def $::env(RESULTS_DIR)/2_1_floorplan.def
-  }
   write_db $::env(RESULTS_DIR)/2_1_floorplan.odb
   write_sdc $::env(RESULTS_DIR)/2_floorplan.sdc
 }
