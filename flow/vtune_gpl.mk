@@ -510,7 +510,7 @@ endif
 # STEP 3: Global placement with placed IOs, timing-driven, and routability-driven.
 #-------------------------------------------------------------------------------
 $(RESULTS_DIR)/3_3_place_gp.odb: $(RESULTS_DIR)/3_2_place_iop.odb $(RESULTS_DIR)/2_floorplan.sdc $(LIB_FILES)
-	($(VTUNE_COLLECT) -r $(VTUNE_REPORT_FILE) -- $(OPENROAD_CMD) $(SCRIPTS_DIR)/global_place.tcl -metrics $(LOG_DIR)/3_3_place_gp.json) 2>&1 | tee $(LOG_DIR)/3_3_place_gp.log
+	($(VTUNE_COLLECT) -r $(VTUNE_FILE) -- $(OPENROAD_CMD) $(SCRIPTS_DIR)/global_place.tcl -metrics $(LOG_DIR)/3_3_place_gp.json) 2>&1 | tee $(LOG_DIR)/3_3_place_gp.log
 	$(VTUNE_REPORT) -r $(VTUNE_FILE)_preio -report-output $(VTUNE_FILE).csv
 	
 
