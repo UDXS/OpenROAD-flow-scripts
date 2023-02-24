@@ -183,7 +183,7 @@ export RESULTS_DIR = $(WORK_HOME)/results/$(PLATFORM)/$(DESIGN_NICKNAME)/$(FLOW_
 
 export VTUNE_CMD ?= vtune
 export VTUNE_COLLECT ?= $(VTUNE_CMD) -collect hotspots
-export VTUNE_REPORT ?= $(VTUNE_CMD)$ -R top-down -call-stack-mode all -column="CPU Time:Self","Module" -filter "Function Stack" -format csv -csv-delimiter comma
+export VTUNE_REPORT ?= $(VTUNE_CMD) -R top-down -call-stack-mode all -column="CPU Time:Self","Module" -filter "Function Stack" -format csv -csv-delimiter comma
 export VTUNE_FILE ?= $(WORK_HOME)/reports/$(PLATFORM)/$(DESIGN_NICKNAME)/$(FLOW_VARIANT)/vtune_$(PLATFORM)_$(DESIGN_NICKNAME)_$(FLOW_VARIANT)
 
 
